@@ -88,86 +88,6 @@ class PlanificadorVoraz:
         self.estadisticas_greedy['asignaciones_exitosas'] += 1
         return True
 
-    def greedy_horarios(self, clases: List[Clase]) -> List[HorarioAsignado]:
-        clases_ordenadas = sorted(clases, 
-                                key=lambda c: (c.duracion, c.estudiantes), 
-                                reverse=True)
-        
-        self.estadisticas_greedy['criterios_aplicados'] += 1
-        
-        horarios_asignados = []
-        
-        for clase in clases_ordenadas:
-            self.estadisticas_greedy['iteraciones'] += 1
-            asignada = False
-            
-            for dia in DiaSemana:
-                if asignada:
-                    break
-                    
-                for hora in range(8, 18 - clase.duracion + 1):
-                    if asignada:
-                        break
-                    
-                    aulas_ordenadas = sorted(self.aulas, 
-                                           key=lambda a: abs(a.capacidad - clase.estudiantes))
-                    
-                    for aula in aulas_ordenadas:
-                        if (aula.capacidad >= clase.estudiantes and 
-                            not self._verificar_conflicto(clase, dia, hora, aula)):
-                            
-                            horario = HorarioAsignado(
-                                clase=clase,
-                                dia=dia,
-                                hora_inicio=hora,
-                                hora_fin=hora + clase.duracion,
-                                aula=aula
-                            )
-                            
-                            horarios_asignados.append(horario)
-                            self.horarios_asignados.append(horario)
-                            asignada = True
-                            break
-        
-        return horarios_asignados
-
-    def greedy_mejorado(self, clases: List[Clase]) -> List[HorarioAsignado]:
-        resultado = self.greedy_horarios(clases)
-        
-        mejorado = True
-        iteraciones = 0
-        max_iteraciones = 10
-        
-        while mejorado and iteraciones < max_iteraciones:
-            mejorado = False
-            iteraciones += 1
-            
-            for i, horario in enumerate(resultado):
-                for dia in DiaSemana:
-                    for hora in range(8, 18 - horario.clase.duracion + 1):
-                        if (dia, hora) != (horario.dia, horario.hora_inicio):
-                            if self._es_mejor_horario(horario, dia, hora):
-                                horario.dia = dia
-                                horario.hora_inicio = hora
-                                horario.hora_fin = hora + horario.clase.duracion
-                                mejorado = True
-                                self.estadisticas_greedy['mejoras_locales'] += 1
-                                break
-                    if mejorado:
-                        break
-        
-        return resultado
-    
-    def _es_mejor_horario(self, horario: HorarioAsignado, nuevo_dia: DiaSemana, 
-                         nueva_hora: int) -> bool:
-        dia_actual = horario.clase.horario_preferido[0]
-        hora_actual = horario.clase.horario_preferido[1]
-        
-        distancia_actual = abs(horario.hora_inicio - hora_actual)
-        distancia_nueva = abs(nueva_hora - hora_actual)
-        
-        return distancia_nueva < distancia_actual
-
     def greedy_adaptativo(self, clases: List[Clase]) -> List[HorarioAsignado]:
         duraciones = [c.duracion for c in clases]
         estudiantes = [c.estudiantes for c in clases]
@@ -324,21 +244,13 @@ def pruebas_sobrecarga_greedy():
     
     resultados = {
         'tamanos': [],
-        'tiempos_greedy': [],
-        'tiempos_greedy_mejorado': [],
         'tiempos_greedy_adaptativo': [],
-        'memoria_greedy': [],
-        'memoria_greedy_mejorado': [],
         'memoria_greedy_adaptativo': [],
-        'clases_asignadas_greedy': [],
-        'clases_asignadas_greedy_mejorado': [],
         'clases_asignadas_greedy_adaptativo': [],
         'iteraciones': [],
         'asignaciones_exitosas': [],
         'asignaciones_fallidas': [],
         'mejoras_locales': [],
-        'eficiencia_greedy': [],
-        'eficiencia_greedy_mejorado': [],
         'eficiencia_greedy_adaptativo': []
     }
     
@@ -346,7 +258,7 @@ def pruebas_sobrecarga_greedy():
     print(f"- Tamaños: {tamanos_prueba}")
     print(f"- Aulas disponibles: {num_aulas}")
     print(f"- Horarios: 8:00-18:00, lunes a viernes")
-    print(f"- Algoritmos: Greedy, Greedy Mejorado, Greedy Adaptativo")
+    print(f"- Algoritmo: Greedy Adaptativo")
     print()
     
     for tamano in tamanos_prueba:
@@ -357,61 +269,27 @@ def pruebas_sobrecarga_greedy():
             
             planificador = PlanificadorVoraz(aulas)
             
-            resultado_greedy, tiempo_greedy, memoria_greedy = medir_rendimiento_greedy(
-                planificador.greedy_horarios, clases
-            )
-            stats_greedy = planificador.estadisticas()
-            
-            planificador.limpiar_horarios()
-            resultado_greedy_mejorado, tiempo_greedy_mejorado, memoria_greedy_mejorado = medir_rendimiento_greedy(
-                planificador.greedy_mejorado, clases
-            )
-            stats_greedy_mejorado = planificador.estadisticas()
-            
-            planificador.limpiar_horarios()
             resultado_greedy_adaptativo, tiempo_greedy_adaptativo, memoria_greedy_adaptativo = medir_rendimiento_greedy(
                 planificador.greedy_adaptativo, clases
             )
             stats_greedy_adaptativo = planificador.estadisticas()
             
             resultados['tamanos'].append(tamano)
-            resultados['tiempos_greedy'].append(tiempo_greedy)
-            resultados['tiempos_greedy_mejorado'].append(tiempo_greedy_mejorado)
             resultados['tiempos_greedy_adaptativo'].append(tiempo_greedy_adaptativo)
-            resultados['memoria_greedy'].append(memoria_greedy)
-            resultados['memoria_greedy_mejorado'].append(memoria_greedy_mejorado)
             resultados['memoria_greedy_adaptativo'].append(memoria_greedy_adaptativo)
-            resultados['clases_asignadas_greedy'].append(stats_greedy['clases_asignadas'])
-            resultados['clases_asignadas_greedy_mejorado'].append(stats_greedy_mejorado['clases_asignadas'])
             resultados['clases_asignadas_greedy_adaptativo'].append(stats_greedy_adaptativo['clases_asignadas'])
-            resultados['iteraciones'].append(stats_greedy['estadisticas_greedy']['iteraciones'])
-            resultados['asignaciones_exitosas'].append(stats_greedy['estadisticas_greedy']['asignaciones_exitosas'])
-            resultados['asignaciones_fallidas'].append(stats_greedy['estadisticas_greedy']['asignaciones_fallidas'])
-            resultados['mejoras_locales'].append(stats_greedy_mejorado['estadisticas_greedy']['mejoras_locales'])
+            resultados['iteraciones'].append(stats_greedy_adaptativo['estadisticas_greedy']['iteraciones'])
+            resultados['asignaciones_exitosas'].append(stats_greedy_adaptativo['estadisticas_greedy']['asignaciones_exitosas'])
+            resultados['asignaciones_fallidas'].append(stats_greedy_adaptativo['estadisticas_greedy']['asignaciones_fallidas'])
+            resultados['mejoras_locales'].append(0)  # No hay mejoras locales en el adaptativo
             
-            eficiencia_greedy = stats_greedy['clases_asignadas'] / tiempo_greedy if tiempo_greedy > 0 else 0
-            eficiencia_greedy_mejorado = stats_greedy_mejorado['clases_asignadas'] / tiempo_greedy_mejorado if tiempo_greedy_mejorado > 0 else 0
             eficiencia_greedy_adaptativo = stats_greedy_adaptativo['clases_asignadas'] / tiempo_greedy_adaptativo if tiempo_greedy_adaptativo > 0 else 0
-            
-            resultados['eficiencia_greedy'].append(eficiencia_greedy)
-            resultados['eficiencia_greedy_mejorado'].append(eficiencia_greedy_mejorado)
             resultados['eficiencia_greedy_adaptativo'].append(eficiencia_greedy_adaptativo)
-            
-            print(f"  📊 GREEDY BÁSICO:")
-            print(f"     Tiempo: {tiempo_greedy:.4f}s, Memoria: {memoria_greedy:.2f} MB")
-            print(f"     Clases asignadas: {stats_greedy['clases_asignadas']}/{tamano} ({stats_greedy['clases_asignadas']/tamano*100:.1f}%)")
-            print(f"     Iteraciones: {stats_greedy['estadisticas_greedy']['iteraciones']}")
-            print(f"     Eficiencia: {eficiencia_greedy:.2f} clases/s")
-            
-            print(f"  🚀 GREEDY MEJORADO:")
-            print(f"     Tiempo: {tiempo_greedy_mejorado:.4f}s, Memoria: {memoria_greedy_mejorado:.2f} MB")
-            print(f"     Clases asignadas: {stats_greedy_mejorado['clases_asignadas']}/{tamano} ({stats_greedy_mejorado['clases_asignadas']/tamano*100:.1f}%)")
-            print(f"     Mejoras locales: {stats_greedy_mejorado['estadisticas_greedy']['mejoras_locales']}")
-            print(f"     Eficiencia: {eficiencia_greedy_mejorado:.2f} clases/s")
             
             print(f"  🎯 GREEDY ADAPTATIVO:")
             print(f"     Tiempo: {tiempo_greedy_adaptativo:.4f}s, Memoria: {memoria_greedy_adaptativo:.2f} MB")
             print(f"     Clases asignadas: {stats_greedy_adaptativo['clases_asignadas']}/{tamano} ({stats_greedy_adaptativo['clases_asignadas']/tamano*100:.1f}%)")
+            print(f"     Iteraciones: {stats_greedy_adaptativo['estadisticas_greedy']['iteraciones']}")
             print(f"     Eficiencia: {eficiencia_greedy_adaptativo:.2f} clases/s")
             print()
             
@@ -432,34 +310,27 @@ def analisis_cuellos_botella_greedy(resultados):
         return
     
     print("1. ESCALABILIDAD TEMPORAL:")
-    algoritmos = ['greedy', 'greedy_mejorado', 'greedy_adaptativo']
-    nombres = ['Greedy Básico', 'Greedy Mejorado', 'Greedy Adaptativo']
-    
-    for i, (algo, nombre) in enumerate(zip(algoritmos, nombres)):
-        print(f"\n   {nombre}:")
-        tiempos = resultados[f'tiempos_{algo}']
-        for j in range(1, len(tiempos)):
-            if tiempos[j-1] > 0:
-                factor_tiempo = tiempos[j] / tiempos[j-1]
-                factor_tamano = resultados['tamanos'][j] / resultados['tamanos'][j-1]
-                print(f"     {resultados['tamanos'][j-1]} → {resultados['tamanos'][j]} clases: "
-                      f"tiempo {factor_tiempo:.2f}x, tamaño {factor_tamano:.2f}x")
+    tiempos = resultados['tiempos_greedy_adaptativo']
+    for j in range(1, len(tiempos)):
+        if tiempos[j-1] > 0:
+            factor_tiempo = tiempos[j] / tiempos[j-1]
+            factor_tamano = resultados['tamanos'][j] / resultados['tamanos'][j-1]
+            print(f"     {resultados['tamanos'][j-1]} → {resultados['tamanos'][j]} clases: "
+                  f"tiempo {factor_tiempo:.2f}x, tamaño {factor_tamano:.2f}x")
     
     print("\n2. USO DE MEMORIA:")
-    for i, (algo, nombre) in enumerate(zip(algoritmos, nombres)):
-        memorias = resultados[f'memoria_{algo}']
-        if memorias:
-            memoria_maxima = max(memorias)
-            indice_maxima = memorias.index(memoria_maxima)
-            print(f"   {nombre}: {memoria_maxima:.2f} MB con {resultados['tamanos'][indice_maxima]} clases")
+    memorias = resultados['memoria_greedy_adaptativo']
+    if memorias:
+        memoria_maxima = max(memorias)
+        indice_maxima = memorias.index(memoria_maxima)
+        print(f"   Memoria máxima: {memoria_maxima:.2f} MB con {resultados['tamanos'][indice_maxima]} clases")
     
     print("\n3. EFICIENCIA EN ASIGNACIÓN:")
-    for i, (algo, nombre) in enumerate(zip(algoritmos, nombres)):
-        clases_asignadas = resultados[f'clases_asignadas_{algo}']
-        if clases_asignadas:
-            eficiencia_maxima = max(clases_asignadas)
-            indice_eficiencia = clases_asignadas.index(eficiencia_maxima)
-            print(f"   {nombre}: {eficiencia_maxima} clases con {resultados['tamanos'][indice_eficiencia]} clases")
+    clases_asignadas = resultados['clases_asignadas_greedy_adaptativo']
+    if clases_asignadas:
+        eficiencia_maxima = max(clases_asignadas)
+        indice_eficiencia = clases_asignadas.index(eficiencia_maxima)
+        print(f"   Máxima asignación: {eficiencia_maxima} clases con {resultados['tamanos'][indice_eficiencia]} clases")
     
     print("\n4. COMPORTAMIENTO VORAZ:")
     if resultados['iteraciones']:
@@ -478,30 +349,27 @@ def analisis_cuellos_botella_greedy(resultados):
         print(f"   Mejoras locales máximas: {mejoras_maximas} con {resultados['tamanos'][indice_mejoras]} clases")
     
     print("\n5. CUELLOS DE BOTELLA IDENTIFICADOS:")
+    tiempos = resultados['tiempos_greedy_adaptativo']
+    if len(tiempos) > 2:
+        crecimiento_tiempo = []
+        for j in range(1, len(tiempos)):
+            if tiempos[j-1] > 0:
+                crecimiento = tiempos[j] / tiempos[j-1]
+                crecimiento_tiempo.append(crecimiento)
+        
+        if crecimiento_tiempo:
+            crecimiento_promedio = sum(crecimiento_tiempo) / len(crecimiento_tiempo)
+            if crecimiento_promedio > 2.0:
+                print(f"   ⚠️  CRECIMIENTO TEMPORAL: {crecimiento_promedio:.2f}x por duplicación")
     
-    for i, (algo, nombre) in enumerate(zip(algoritmos, nombres)):
-        tiempos = resultados[f'tiempos_{algo}']
-        if len(tiempos) > 2:
-            crecimiento_tiempo = []
-            for j in range(1, len(tiempos)):
-                if tiempos[j-1] > 0:
-                    crecimiento = tiempos[j] / tiempos[j-1]
-                    crecimiento_tiempo.append(crecimiento)
-            
-            if crecimiento_tiempo:
-                crecimiento_promedio = sum(crecimiento_tiempo) / len(crecimiento_tiempo)
-                if crecimiento_promedio > 2.0:
-                    print(f"   ⚠️  {nombre} - CRECIMIENTO TEMPORAL: {crecimiento_promedio:.2f}x por duplicación")
-    
-    for i, (algo, nombre) in enumerate(zip(algoritmos, nombres)):
-        eficiencias = resultados[f'eficiencia_{algo}']
-        if len(eficiencias) > 2:
-            eficiencia_inicial = eficiencias[0]
-            eficiencia_final = eficiencias[-1]
-            if eficiencia_inicial > 0:
-                decrecimiento = eficiencia_final / eficiencia_inicial
-                if decrecimiento < 0.5:
-                    print(f"   ⚠️  {nombre} - DECRECIMIENTO DE EFICIENCIA: {decrecimiento:.2f}x al final")
+    eficiencias = resultados['eficiencia_greedy_adaptativo']
+    if len(eficiencias) > 2:
+        eficiencia_inicial = eficiencias[0]
+        eficiencia_final = eficiencias[-1]
+        if eficiencia_inicial > 0:
+            decrecimiento = eficiencia_final / eficiencia_inicial
+            if decrecimiento < 0.5:
+                print(f"   ⚠️  DECRECIMIENTO DE EFICIENCIA: {decrecimiento:.2f}x al final")
 
 def crear_visualizaciones_greedy(resultados):
     
@@ -514,8 +382,6 @@ def crear_visualizaciones_greedy(resultados):
     fig, axes = plt.subplots(3, 3, figsize=(20, 15))
     fig.suptitle('Análisis de Sobrecarga - Algoritmo Voraz (Greedy)', fontsize=16, fontweight='bold')
     
-    axes[0, 0].plot(resultados['tamanos'], resultados['tiempos_greedy'], 'b-o', label='Greedy Básico', linewidth=2, markersize=6)
-    axes[0, 0].plot(resultados['tamanos'], resultados['tiempos_greedy_mejorado'], 'r-s', label='Greedy Mejorado', linewidth=2, markersize=6)
     axes[0, 0].plot(resultados['tamanos'], resultados['tiempos_greedy_adaptativo'], 'g-^', label='Greedy Adaptativo', linewidth=2, markersize=6)
     axes[0, 0].set_xlabel('Número de Clases')
     axes[0, 0].set_ylabel('Tiempo de Ejecución (segundos)')
@@ -523,8 +389,6 @@ def crear_visualizaciones_greedy(resultados):
     axes[0, 0].legend()
     axes[0, 0].grid(True, alpha=0.3)
     
-    axes[0, 1].plot(resultados['tamanos'], resultados['memoria_greedy'], 'b-o', label='Greedy Básico', linewidth=2, markersize=6)
-    axes[0, 1].plot(resultados['tamanos'], resultados['memoria_greedy_mejorado'], 'r-s', label='Greedy Mejorado', linewidth=2, markersize=6)
     axes[0, 1].plot(resultados['tamanos'], resultados['memoria_greedy_adaptativo'], 'g-^', label='Greedy Adaptativo', linewidth=2, markersize=6)
     axes[0, 1].set_xlabel('Número de Clases')
     axes[0, 1].set_ylabel('Uso de Memoria (MB)')
@@ -532,8 +396,6 @@ def crear_visualizaciones_greedy(resultados):
     axes[0, 1].legend()
     axes[0, 1].grid(True, alpha=0.3)
     
-    axes[0, 2].plot(resultados['tamanos'], resultados['clases_asignadas_greedy'], 'b-o', label='Greedy Básico', linewidth=2, markersize=6)
-    axes[0, 2].plot(resultados['tamanos'], resultados['clases_asignadas_greedy_mejorado'], 'r-s', label='Greedy Mejorado', linewidth=2, markersize=6)
     axes[0, 2].plot(resultados['tamanos'], resultados['clases_asignadas_greedy_adaptativo'], 'g-^', label='Greedy Adaptativo', linewidth=2, markersize=6)
     axes[0, 2].plot(resultados['tamanos'], resultados['tamanos'], 'k--', alpha=0.5, label='Máximo teórico')
     axes[0, 2].set_xlabel('Número de Clases')
@@ -542,8 +404,6 @@ def crear_visualizaciones_greedy(resultados):
     axes[0, 2].legend()
     axes[0, 2].grid(True, alpha=0.3)
     
-    axes[1, 0].plot(resultados['tamanos'], resultados['eficiencia_greedy'], 'b-o', label='Greedy Básico', linewidth=2, markersize=6)
-    axes[1, 0].plot(resultados['tamanos'], resultados['eficiencia_greedy_mejorado'], 'r-s', label='Greedy Mejorado', linewidth=2, markersize=6)
     axes[1, 0].plot(resultados['tamanos'], resultados['eficiencia_greedy_adaptativo'], 'g-^', label='Greedy Adaptativo', linewidth=2, markersize=6)
     axes[1, 0].set_xlabel('Número de Clases')
     axes[1, 0].set_ylabel('Eficiencia (clases/segundo)')
@@ -571,8 +431,6 @@ def crear_visualizaciones_greedy(resultados):
     axes[2, 0].set_title('Optimización Local')
     axes[2, 0].grid(True, alpha=0.3)
     
-    axes[2, 1].loglog(resultados['tamanos'], resultados['tiempos_greedy'], 'b-o', label='Greedy Básico')
-    axes[2, 1].loglog(resultados['tamanos'], resultados['tiempos_greedy_mejorado'], 'r-s', label='Greedy Mejorado')
     axes[2, 1].loglog(resultados['tamanos'], resultados['tiempos_greedy_adaptativo'], 'g-^', label='Greedy Adaptativo')
     axes[2, 1].set_xlabel('Número de Clases (log)')
     axes[2, 1].set_ylabel('Tiempo (log)')
@@ -580,16 +438,13 @@ def crear_visualizaciones_greedy(resultados):
     axes[2, 1].legend()
     axes[2, 1].grid(True, alpha=0.3)
     
-    # 9. Comparación de eficiencia relativa
-    if len(resultados['eficiencia_greedy']) > 0 and len(resultados['eficiencia_greedy_mejorado']) > 0:
-        eficiencia_relativa = [g_m/g_b if g_b > 0 else 0 for g_m, g_b in zip(resultados['eficiencia_greedy_mejorado'], resultados['eficiencia_greedy'])]
-        axes[2, 2].plot(resultados['tamanos'], eficiencia_relativa, 'orange', marker='o', linewidth=2, markersize=6)
-        axes[2, 2].axhline(y=1, color='k', linestyle='--', alpha=0.5, label='Línea de referencia')
-        axes[2, 2].set_xlabel('Número de Clases')
-        axes[2, 2].set_ylabel('Eficiencia Relativa (Mejorado/Básico)')
-        axes[2, 2].set_title('Mejora de Eficiencia')
-        axes[2, 2].legend()
-        axes[2, 2].grid(True, alpha=0.3)
+    # 9. Tendencia de eficiencia
+    axes[2, 2].plot(resultados['tamanos'], resultados['eficiencia_greedy_adaptativo'], 'g-^', label='Tendencia de Eficiencia')
+    axes[2, 2].set_xlabel('Número de Clases')
+    axes[2, 2].set_ylabel('Eficiencia (clases/segundo)')
+    axes[2, 2].set_title('Tendencia de Eficiencia')
+    axes[2, 2].legend()
+    axes[2, 2].grid(True, alpha=0.3)
     
     plt.tight_layout()
     plt.savefig('sobrecarga_algoritmo_voraz.png', dpi=300, bbox_inches='tight')
@@ -598,9 +453,7 @@ def crear_visualizaciones_greedy(resultados):
     # Gráfica adicional: Análisis detallado de comportamiento
     plt.figure(figsize=(15, 10))
     
-    plt.subplot(2, 3, 1)
-    plt.semilogx(resultados['tamanos'], resultados['eficiencia_greedy'], 'b-o', label='Greedy Básico')
-    plt.semilogx(resultados['tamanos'], resultados['eficiencia_greedy_mejorado'], 'r-s', label='Greedy Mejorado')
+    plt.subplot(2, 2, 1)
     plt.semilogx(resultados['tamanos'], resultados['eficiencia_greedy_adaptativo'], 'g-^', label='Greedy Adaptativo')
     plt.xlabel('Número de Clases (log)')
     plt.ylabel('Eficiencia (clases/segundo)')
@@ -608,14 +461,14 @@ def crear_visualizaciones_greedy(resultados):
     plt.legend()
     plt.grid(True, alpha=0.3)
     
-    plt.subplot(2, 3, 2)
+    plt.subplot(2, 2, 2)
     plt.semilogx(resultados['tamanos'], resultados['iteraciones'], 'm-d', linewidth=2, markersize=6)
     plt.xlabel('Número de Clases (log)')
     plt.ylabel('Iteraciones')
     plt.title('Iteraciones vs Tamaño')
     plt.grid(True, alpha=0.3)
     
-    plt.subplot(2, 3, 3)
+    plt.subplot(2, 2, 3)
     if resultados['asignaciones_exitosas'] and resultados['asignaciones_fallidas']:
         ratio_exito = [e/(e+f) if (e+f) > 0 else 0 for e, f in zip(resultados['asignaciones_exitosas'], resultados['asignaciones_fallidas'])]
         plt.semilogx(resultados['tamanos'], ratio_exito, 'c-p', linewidth=2, markersize=6)
@@ -624,34 +477,13 @@ def crear_visualizaciones_greedy(resultados):
         plt.title('Ratio de Éxito en Asignaciones')
         plt.grid(True, alpha=0.3)
     
-    plt.subplot(2, 3, 4)
-    plt.semilogx(resultados['tamanos'], resultados['mejoras_locales'], 'orange', marker='o', linewidth=2, markersize=6)
-    plt.xlabel('Número de Clases (log)')
-    plt.ylabel('Mejoras Locales')
-    plt.title('Mejoras Locales vs Tamaño')
-    plt.grid(True, alpha=0.3)
-    
-    plt.subplot(2, 3, 5)
-    plt.semilogx(resultados['tamanos'], resultados['memoria_greedy'], 'b-o', label='Greedy Básico')
-    plt.semilogx(resultados['tamanos'], resultados['memoria_greedy_mejorado'], 'r-s', label='Greedy Mejorado')
+    plt.subplot(2, 2, 4)
     plt.semilogx(resultados['tamanos'], resultados['memoria_greedy_adaptativo'], 'g-^', label='Greedy Adaptativo')
     plt.xlabel('Número de Clases (log)')
     plt.ylabel('Memoria (MB)')
     plt.title('Memoria vs Tamaño')
     plt.legend()
     plt.grid(True, alpha=0.3)
-    
-    plt.subplot(2, 3, 6)
-    # Comparación de tiempo relativo
-    if len(resultados['tiempos_greedy']) > 0 and len(resultados['tiempos_greedy_mejorado']) > 0:
-        tiempo_relativo = [t_m/t_b if t_b > 0 else 0 for t_m, t_b in zip(resultados['tiempos_greedy_mejorado'], resultados['tiempos_greedy'])]
-        plt.semilogx(resultados['tamanos'], tiempo_relativo, 'purple', marker='d', linewidth=2, markersize=6)
-        plt.axhline(y=1, color='k', linestyle='--', alpha=0.5, label='Sin mejora')
-        plt.xlabel('Número de Clases (log)')
-        plt.ylabel('Tiempo Relativo (Mejorado/Básico)')
-        plt.title('Costo de Mejora Local')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
     
     plt.tight_layout()
     plt.savefig('analisis_detallado_greedy.png', dpi=300, bbox_inches='tight')
@@ -684,12 +516,6 @@ def main():
     print("- sobrecarga_algoritmo_voraz.png")
     print("- analisis_detallado_greedy.png")
     print()
-    print("CONCLUSIONES:")
-    print("- El algoritmo Greedy básico es más rápido para problemas pequeños")
-    print("- El Greedy mejorado ofrece mejor calidad con costo computacional moderado")
-    print("- El Greedy adaptativo se ajusta dinámicamente a las características del problema")
-    print("- La eficiencia se mantiene estable hasta problemas de tamaño medio-grande")
-
 if __name__ == "__main__":
     main()
 

@@ -1,8 +1,3 @@
-"""
-Algoritmo de Divide y Vencerás para Planificación de Horarios
-Incluye pruebas de sobrecarga y estrés específicas para este enfoque
-"""
-
 import time
 import random
 import matplotlib.pyplot as plt
@@ -22,7 +17,6 @@ class DiaSemana(Enum):
 
 @dataclass
 class Clase:
-    """Representa una clase con sus características"""
     id: int
     nombre: str
     profesor: str
@@ -33,14 +27,12 @@ class Clase:
 
 @dataclass
 class Aula:
-    """Representa un aula con su capacidad y disponibilidad"""
     id: str
     capacidad: int
     equipamiento: List[str]
 
 @dataclass
 class HorarioAsignado:
-    """Representa un horario asignado a una clase"""
     clase: Clase
     dia: DiaSemana
     hora_inicio: int
@@ -48,7 +40,6 @@ class HorarioAsignado:
     aula: Aula
 
 class PlanificadorDivideVenceras:
-    """Implementación específica del algoritmo Divide y Vencerás"""
     
     def __init__(self, aulas: List[Aula]):
         self.aulas = aulas
@@ -61,7 +52,6 @@ class PlanificadorDivideVenceras:
     
     def _verificar_conflicto(self, clase: Clase, dia: DiaSemana, 
                            hora_inicio: int, aula: Aula) -> bool:
-        """Verifica si hay conflicto con horarios ya asignados"""
         hora_fin = hora_inicio + clase.duracion
         
         for horario in self.horarios_asignados:
@@ -79,7 +69,6 @@ class PlanificadorDivideVenceras:
     
     def _asignar_horario(self, clase: Clase, dia: DiaSemana, 
                         hora_inicio: int, aula: Aula) -> bool:
-        """Asigna un horario a una clase si es posible"""
         if self._verificar_conflicto(clase, dia, hora_inicio, aula):
             return False
         
@@ -94,22 +83,7 @@ class PlanificadorDivideVenceras:
         self.horarios_asignados.append(horario)
         return True
 
-    def divide_venceras(self, clases: List[Clase], nivel_recursion: int = 0) -> List[HorarioAsignado]:
-        """
-        Algoritmo de Divide y Vencerás para planificación de horarios
-        
-        Estrategia:
-        1. DIVIDIR: Separar clases por duración (más largas vs más cortas)
-        2. VENCER: Resolver recursivamente cada subconjunto
-        3. COMBINAR: Unir las soluciones parciales
-        
-        Complejidad Temporal: O(n² * m * h) donde:
-        - n = número de clases
-        - m = número de aulas
-        - h = número de horarios disponibles
-        
-        Complejidad Espacial: O(n) para la recursión
-        """
+    def divide_venceras(self, clases: List[Clase], nivel_recursion: int = 0) -> List[HorarioAsignado]:    
         self.estadisticas_recursion['llamadas_recursivas'] += 1
         self.estadisticas_recursion['niveles_maximos'] = max(
             self.estadisticas_recursion['niveles_maximos'], nivel_recursion
@@ -142,7 +116,6 @@ class PlanificadorDivideVenceras:
         return resultado_largas + resultado_cortas
     
     def _divide_venceras_recursivo(self, clases: List[Clase], nivel_recursion: int) -> List[HorarioAsignado]:
-        """Función recursiva auxiliar para divide y vencerás"""
         self.estadisticas_recursion['llamadas_recursivas'] += 1
         self.estadisticas_recursion['niveles_maximos'] = max(
             self.estadisticas_recursion['niveles_maximos'], nivel_recursion
@@ -173,7 +146,6 @@ class PlanificadorDivideVenceras:
         return resultado1 + resultado2
 
     def limpiar_horarios(self):
-        """Limpia todos los horarios asignados y estadísticas"""
         self.horarios_asignados = []
         self.estadisticas_recursion = {
             'llamadas_recursivas': 0,
@@ -182,7 +154,6 @@ class PlanificadorDivideVenceras:
         }
 
     def estadisticas(self) -> Dict:
-        """Calcula estadísticas detalladas de la asignación actual"""
         if not self.horarios_asignados:
             return {
                 "clases_asignadas": 0,
@@ -208,7 +179,6 @@ class PlanificadorDivideVenceras:
         }
 
 def generar_datos_prueba_dv(num_clases: int, num_aulas: int = 5) -> Tuple[List[Clase], List[Aula]]:
-    """Genera datos de prueba específicos para pruebas de divide y vencerás"""
     
     aulas = []
     for i in range(num_aulas):
@@ -253,7 +223,6 @@ def generar_datos_prueba_dv(num_clases: int, num_aulas: int = 5) -> Tuple[List[C
     return clases, aulas
 
 def medir_rendimiento_dv(func, *args, **kwargs):
-    """Mide el tiempo de ejecución y uso de memoria para divide y vencerás"""
     proceso = psutil.Process(os.getpid())
     
     memoria_inicial = proceso.memory_info().rss / 1024 / 1024  # MB
@@ -269,22 +238,13 @@ def medir_rendimiento_dv(func, *args, **kwargs):
     return resultado, fin - inicio, memoria_final - memoria_inicial
 
 def pruebas_sobrecarga_divide_venceras():
-    """
-    Pruebas de sobrecarga específicas para el algoritmo Divide y Vencerás
-    
-    Objetivos:
-    1. Medir la eficiencia con volúmenes grandes de entrada
-    2. Verificar cómo escala el rendimiento con aumento gradual de carga
-    3. Identificar cuellos de botella en el procesamiento recursivo
-    """
     
     print("="*70)
     print("PRUEBAS DE SOBRECARGA - ALGORITMO DIVIDE Y VENCERÁS")
     print("="*70)
     
-    # Configuración de pruebas de sobrecarga
     tamanos_prueba = [10, 25, 50, 100, 200, 300, 500, 750, 1000]
-    num_aulas = 8  # Número fijo de aulas para pruebas consistentes
+    num_aulas = 8  
     
     resultados = {
         'tamanos': [],
@@ -307,21 +267,16 @@ def pruebas_sobrecarga_divide_venceras():
         print(f"Probando con {tamano} clases...")
         
         try:
-            # Generar datos de prueba
             clases, aulas = generar_datos_prueba_dv(tamano, num_aulas)
             
-            # Crear planificador
             planificador = PlanificadorDivideVenceras(aulas)
             
-            # Medir rendimiento
             resultado, tiempo, memoria = medir_rendimiento_dv(
                 planificador.divide_venceras, clases
             )
             
-            # Obtener estadísticas
             stats = planificador.estadisticas()
             
-            # Almacenar resultados
             resultados['tamanos'].append(tamano)
             resultados['tiempos'].append(tiempo)
             resultados['memoria'].append(memoria)
@@ -330,7 +285,6 @@ def pruebas_sobrecarga_divide_venceras():
             resultados['niveles_maximos'].append(stats['estadisticas_recursion']['niveles_maximos'])
             resultados['divisiones_realizadas'].append(stats['estadisticas_recursion']['divisiones_realizadas'])
             
-            # Calcular eficiencia (clases asignadas por segundo)
             eficiencia = stats['clases_asignadas'] / tiempo if tiempo > 0 else 0
             resultados['eficiencia'].append(eficiencia)
             
@@ -344,8 +298,7 @@ def pruebas_sobrecarga_divide_venceras():
             print()
             
         except Exception as e:
-            print(f"  ❌ Error con {tamano} clases: {e}")
-            # Continuar con el siguiente tamaño
+            print(f"   Error con {tamano} clases: {e}")
             continue
     
     return resultados
@@ -361,7 +314,6 @@ def analisis_cuellos_botella_dv(resultados):
         print("No hay datos suficientes para el análisis")
         return
     
-    # Análisis de escalabilidad temporal
     print("1. ESCALABILIDAD TEMPORAL:")
     for i in range(1, len(resultados['tamanos'])):
         tamano_anterior = resultados['tamanos'][i-1]
@@ -375,13 +327,11 @@ def analisis_cuellos_botella_dv(resultados):
             print(f"   {tamano_anterior} → {tamano_actual} clases: "
                   f"tiempo {factor_tiempo:.2f}x, tamaño {factor_tamano:.2f}x")
     
-    # Análisis de uso de memoria
     print("\n2. USO DE MEMORIA:")
     memoria_maxima = max(resultados['memoria'])
     indice_maxima = resultados['memoria'].index(memoria_maxima)
     print(f"   Memoria máxima: {memoria_maxima:.2f} MB con {resultados['tamanos'][indice_maxima]} clases")
     
-    # Análisis de recursión
     print("\n3. COMPORTAMIENTO RECURSIVO:")
     llamadas_maximas = max(resultados['llamadas_recursivas'])
     indice_maximas = resultados['llamadas_recursivas'].index(llamadas_maximas)
@@ -391,16 +341,13 @@ def analisis_cuellos_botella_dv(resultados):
     indice_niveles = resultados['niveles_maximos'].index(niveles_maximos)
     print(f"   Niveles de recursión máximos: {niveles_maximos} con {resultados['tamanos'][indice_niveles]} clases")
     
-    # Análisis de eficiencia
     print("\n4. EFICIENCIA:")
     eficiencia_maxima = max(resultados['eficiencia'])
     indice_eficiencia = resultados['eficiencia'].index(eficiencia_maxima)
     print(f"   Eficiencia máxima: {eficiencia_maxima:.2f} clases/s con {resultados['tamanos'][indice_eficiencia]} clases")
     
-    # Identificar cuellos de botella
     print("\n5. CUELLOS DE BOTELLA IDENTIFICADOS:")
     
-    # Cuello de botella temporal
     if len(resultados['tiempos']) > 2:
         crecimiento_tiempo = []
         for i in range(1, len(resultados['tiempos'])):
@@ -411,9 +358,8 @@ def analisis_cuellos_botella_dv(resultados):
         if crecimiento_tiempo:
             crecimiento_promedio = sum(crecimiento_tiempo) / len(crecimiento_tiempo)
             if crecimiento_promedio > 2.0:
-                print(f"   ⚠️  CRECIMIENTO TEMPORAL: El tiempo crece {crecimiento_promedio:.2f}x por duplicación de datos")
+                print(f"     CRECIMIENTO TEMPORAL: El tiempo crece {crecimiento_promedio:.2f}x por duplicación de datos")
     
-    # Cuello de botella de memoria
     if len(resultados['memoria']) > 2:
         crecimiento_memoria = []
         for i in range(1, len(resultados['memoria'])):
@@ -424,9 +370,8 @@ def analisis_cuellos_botella_dv(resultados):
         if crecimiento_memoria:
             crecimiento_promedio = sum(crecimiento_memoria) / len(crecimiento_memoria)
             if crecimiento_promedio > 1.5:
-                print(f"   ⚠️  CRECIMIENTO DE MEMORIA: La memoria crece {crecimiento_promedio:.2f}x por duplicación de datos")
+                print(f"     CRECIMIENTO DE MEMORIA: La memoria crece {crecimiento_promedio:.2f}x por duplicación de datos")
     
-    # Cuello de botella de recursión
     if len(resultados['llamadas_recursivas']) > 2:
         crecimiento_recursion = []
         for i in range(1, len(resultados['llamadas_recursivas'])):
@@ -437,7 +382,7 @@ def analisis_cuellos_botella_dv(resultados):
         if crecimiento_recursion:
             crecimiento_promedio = sum(crecimiento_recursion) / len(crecimiento_recursion)
             if crecimiento_promedio > 2.5:
-                print(f"   ⚠️  CRECIMIENTO DE RECURSIÓN: Las llamadas recursivas crecen {crecimiento_promedio:.2f}x por duplicación de datos")
+                print(f"     CRECIMIENTO DE RECURSIÓN: Las llamadas recursivas crecen {crecimiento_promedio:.2f}x por duplicación de datos")
 
 def crear_visualizaciones_dv(resultados):
     """Crea visualizaciones específicas para el algoritmo divide y vencerás"""
@@ -448,25 +393,21 @@ def crear_visualizaciones_dv(resultados):
     
     print("Generando visualizaciones para Divide y Vencerás...")
     
-    # Crear figura con múltiples subplots
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
     fig.suptitle('Análisis de Sobrecarga - Algoritmo Divide y Vencerás', fontsize=16, fontweight='bold')
     
-    # 1. Tiempo de ejecución
     axes[0, 0].plot(resultados['tamanos'], resultados['tiempos'], 'b-o', linewidth=2, markersize=6)
     axes[0, 0].set_xlabel('Número de Clases')
     axes[0, 0].set_ylabel('Tiempo de Ejecución (segundos)')
     axes[0, 0].set_title('Escalabilidad Temporal')
     axes[0, 0].grid(True, alpha=0.3)
     
-    # 2. Uso de memoria
     axes[0, 1].plot(resultados['tamanos'], resultados['memoria'], 'r-s', linewidth=2, markersize=6)
     axes[0, 1].set_xlabel('Número de Clases')
     axes[0, 1].set_ylabel('Uso de Memoria (MB)')
     axes[0, 1].set_title('Consumo de Memoria')
     axes[0, 1].grid(True, alpha=0.3)
     
-    # 3. Clases asignadas
     axes[0, 2].plot(resultados['tamanos'], resultados['clases_asignadas'], 'g-^', linewidth=2, markersize=6)
     axes[0, 2].plot(resultados['tamanos'], resultados['tamanos'], 'k--', alpha=0.5, label='Máximo teórico')
     axes[0, 2].set_xlabel('Número de Clases')
@@ -475,21 +416,18 @@ def crear_visualizaciones_dv(resultados):
     axes[0, 2].legend()
     axes[0, 2].grid(True, alpha=0.3)
     
-    # 4. Llamadas recursivas
     axes[1, 0].plot(resultados['tamanos'], resultados['llamadas_recursivas'], 'm-d', linewidth=2, markersize=6)
     axes[1, 0].set_xlabel('Número de Clases')
     axes[1, 0].set_ylabel('Llamadas Recursivas')
     axes[1, 0].set_title('Comportamiento Recursivo')
     axes[1, 0].grid(True, alpha=0.3)
     
-    # 5. Niveles de recursión
     axes[1, 1].plot(resultados['tamanos'], resultados['niveles_maximos'], 'c-p', linewidth=2, markersize=6)
     axes[1, 1].set_xlabel('Número de Clases')
     axes[1, 1].set_ylabel('Niveles Máximos de Recursión')
     axes[1, 1].set_title('Profundidad de Recursión')
     axes[1, 1].grid(True, alpha=0.3)
     
-    # 6. Eficiencia (clases por segundo)
     axes[1, 2].plot(resultados['tamanos'], resultados['eficiencia'], 'orange', marker='o', linewidth=2, markersize=6)
     axes[1, 2].set_xlabel('Número de Clases')
     axes[1, 2].set_ylabel('Eficiencia (clases/segundo)')
@@ -500,12 +438,10 @@ def crear_visualizaciones_dv(resultados):
     plt.savefig('sobrecarga_divide_venceras.png', dpi=300, bbox_inches='tight')
     plt.show()
     
-    # Gráfica adicional: Análisis logarítmico
     plt.figure(figsize=(12, 8))
     
     plt.subplot(2, 2, 1)
     plt.loglog(resultados['tamanos'], resultados['tiempos'], 'b-o', label='Tiempo real')
-    # Línea teórica O(n²)
     tiempos_teoricos = [t * (n/resultados['tamanos'][0])**2 for n, t in zip(resultados['tamanos'], resultados['tiempos'])]
     plt.loglog(resultados['tamanos'], tiempos_teoricos, 'r--', alpha=0.7, label='O(n²) teórico')
     plt.xlabel('Número de Clases (log)')
@@ -516,7 +452,6 @@ def crear_visualizaciones_dv(resultados):
     
     plt.subplot(2, 2, 2)
     plt.loglog(resultados['tamanos'], resultados['llamadas_recursivas'], 'g-s', label='Llamadas reales')
-    # Línea teórica O(n log n)
     llamadas_teoricas = [l * (n/resultados['tamanos'][0]) * np.log2(n/resultados['tamanos'][0]) for n, l in zip(resultados['tamanos'], resultados['llamadas_recursivas'])]
     plt.loglog(resultados['tamanos'], llamadas_teoricas, 'r--', alpha=0.7, label='O(n log n) teórico')
     plt.xlabel('Número de Clases (log)')
@@ -554,13 +489,10 @@ def main():
     print("3. Identificar cuellos de botella en procesamiento recursivo")
     print()
     
-    # Ejecutar pruebas de sobrecarga
     resultados = pruebas_sobrecarga_divide_venceras()
     
-    # Analizar cuellos de botella
     analisis_cuellos_botella_dv(resultados)
     
-    # Crear visualizaciones
     crear_visualizaciones_dv(resultados)
     
     print("="*70)
@@ -570,12 +502,6 @@ def main():
     print("- sobrecarga_divide_venceras.png")
     print("- analisis_logaritmico_dv.png")
     print()
-    print("CONCLUSIONES:")
-    print("- El algoritmo Divide y Vencerás muestra comportamiento O(n²) en la práctica")
-    print("- La recursión crece logarítmicamente con el tamaño del problema")
-    print("- El uso de memoria es lineal con el número de clases")
-    print("- La eficiencia se mantiene estable hasta problemas de tamaño medio")
-
 if __name__ == "__main__":
     main()
 
